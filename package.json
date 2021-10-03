@@ -26,7 +26,7 @@
   "author": "Gabriel Vaquer <brielov@icloud.com>",
   "devDependencies": {
     "@types/jest": "^27.0.1",
-    "@types/node": "^16.7.13",
+    "@types/node": "^16.10.2",
     "@typescript-eslint/eslint-plugin": "^4.31.0",
     "@typescript-eslint/parser": "^4.31.0",
     "esbuild": "^0.12.25",
