@@ -33,7 +33,7 @@ describe.each(invalid)('.is("%s")', (cuit) =>
 describe.each(valid)('.guess("%s", "%s")', (cuit, type) => {
   const [, dni] = cuit.split("-");
   test("guesses correctly", () =>
-    expect(guess(dni, type)).toEqual(cuit.replaceAll("-", "")));
+    expect(guess(dni, type)).toEqual(cuit.replace(/-/g, "")));
 });
 
 describe('.guess("7507882", "M")', () => {
