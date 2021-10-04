@@ -26,3 +26,11 @@ const dni = "21834641";
 // "M" for male, "F" for female and "E" for business / "Persona Jurídica"
 const cuit = guess(dni, "M"); // => 20-21834641-4
 ```
+
+### Format CUIT/CUIL
+
+```typescript
+import { format } from "cuit";
+
+const formatted = format("20218346414", "."); // => 20.21834641.4
+```

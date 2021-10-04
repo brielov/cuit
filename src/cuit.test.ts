@@ -1,4 +1,4 @@
-import { Type, guess, is } from "./cuit";
+import { Type, format, guess, is } from "./cuit";
 
 const valid: [string, Type][] = [
   ["20-22432311-6", "M"],
@@ -22,15 +22,36 @@ function flipLastDigit([cuit, type]: [string, Type]): [string, Type] {
   return [[a, b, n].join("-"), type];
 }
 
-describe.each(valid)('is("%s")', (cuit) =>
+describe.each(valid)('.is("%s")', (cuit) =>
   test("returns true", () => expect(is(cuit)).toBe(true)),
 );
 
-describe.each(invalid)('is("%s")', (cuit) =>
+describe.each(invalid)('.is("%s")', (cuit) =>
   test("returns false", () => expect(is(cuit)).toBe(false)),
 );
 
-describe.each(valid)('guess("%s", "%s")', (cuit, type) => {
+describe.each(valid)('.guess("%s", "%s")', (cuit, type) => {
   const [, dni] = cuit.split("-");
-  test("guesses correctly", () => expect(guess(dni, type)).toEqual(cuit));
+  test("guesses correctly", () =>
+    expect(guess(dni, type)).toEqual(cuit.replaceAll("-", "")));
+});
+
+describe('.guess("7507882", "M")', () => {
+  it("handles 7-digit dni", () => {
+    expect(guess("7507882", "M")).toEqual("20075078820");
+  });
+});
+
+describe(".format()", () => {
+  it("throws error when cuit is invalid", () => {
+    expect(() => format(invalid[0][0])).toThrow(/invalid cuit/i);
+  });
+
+  it("returns a formatted cuit", () => {
+    expect(format("20224323116")).toEqual("20-22432311-6");
+  });
+
+  it("returns a formatted cuit using custom separator", () => {
+    expect(format("20-22432311-6", ".")).toEqual("20.22432311.6");
+  });
 });
