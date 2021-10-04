@@ -40,11 +40,28 @@ describe('.guess("7507882", "M")', () => {
   it("handles 7-digit dni", () => {
     expect(guess("7507882", "M")).toEqual("20075078820");
   });
+
+  it("returns empty zeros when passing the wrong type", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(guess("7507882", "J" as any)).toEqual("00000000000");
+  });
+
+  it("returns default cuit when passing empty dni", () => {
+    expect(guess("", "M")).toEqual("20000000001");
+  });
 });
 
 describe(".format()", () => {
-  it("throws error when cuit is invalid", () => {
-    expect(() => format(invalid[0][0])).toThrow(/invalid cuit/i);
+  it("fills cuit with zeros when missing digits", () => {
+    expect(format("")).toEqual("00-00000000-0");
+  });
+
+  it("ensures the cuit has 11 characters long", () => {
+    expect(format("00-0000000000000000000000000-0")).toEqual("00-00000000-0");
+  });
+
+  it("removes non numeric characters", () => {
+    expect(format("   00-qwerty123-0   ")).toEqual("00-00000123-0");
   });
 
   it("returns a formatted cuit", () => {
