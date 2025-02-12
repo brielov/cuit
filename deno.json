@@ -1,8 +1,6 @@
 {
-  "tasks": {
-    "dev": "deno run --watch main.ts"
-  },
-  "imports": {
-    "@std/assert": "jsr:@std/assert@1"
-  }
+  "name": "@brielov/cuit",
+  "version": "0.1.0",
+  "license": "MIT",
+  "exports": "./mod.ts"
 }

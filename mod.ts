@@ -35,7 +35,7 @@ export const formatCuit = (cuit: CUIT, separator: string = "-"): string => {
   }`;
 };
 
-export enum CuitType {
+export enum Gender {
   Male,
   Female,
 }
@@ -43,15 +43,15 @@ export enum CuitType {
 /**
  * Try to guess a CUIT/CUIL from a given DNI.
  * @param dniInput The DNI string to process.
- * @param type The type of CUIT (CuitType.Male, CuitType.Female, or CuitType.Entity).
+ * @param gender The type of CUIT (CuitType.Male, CuitType.Female, or CuitType.Entity).
  * @returns A guessed CUIT string in the format XX-XXXXXXXX-X.
  */
-export const guessCuit = (dniInput: string, type: CuitType): string => {
+export const guessCuit = (dniInput: string, gender: Gender): string => {
   // Sanitize the DNI input to remove non-digit characters and pad to 8 digits
   const sanitizedDni = dniInput.replace(/\D/g, "").padStart(8, "0").slice(0, 8);
 
   // Determine the prefix based on the type (XY digits)
-  let prefix = type === CuitType.Female ? "27" : "20";
+  let prefix = gender === Gender.Female ? "27" : "20";
 
   // Concatenate prefix and DNI
   const partialCuit = prefix + sanitizedDni;
@@ -64,10 +64,10 @@ export const guessCuit = (dniInput: string, type: CuitType): string => {
 
   // Adjust for special cases where checksum equals 1
   if (checksum === 1) {
-    if (type === CuitType.Male) {
+    if (gender === Gender.Male) {
       checksum = 9;
       prefix = "23"; // Change prefix for male
-    } else if (type === CuitType.Female) {
+    } else if (gender === Gender.Female) {
       checksum = 4;
       prefix = "23"; // Change prefix for female
     }

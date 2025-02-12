@@ -1,7 +1,13 @@
 import { expect } from "jsr:@std/expect";
 import { describe, it } from "jsr:@std/testing/bdd";
 import cuits from "./cuits.json" with { type: "json" };
-import { CUIT, CuitType, formatCuit, guessCuit, validateCuit } from "./mod.ts";
+import {
+  type CUIT,
+  formatCuit,
+  Gender,
+  guessCuit,
+  validateCuit,
+} from "./mod.ts";
 
 describe("validateCuit", () => {
   it("should return a valid CUIT for each entry", () => {
@@ -45,7 +51,7 @@ describe("formatCuit", () => {
 describe("guessCuit", () => {
   it("should guess the CUIT for a male celebrity", () => {
     const dni = "11299750"; // Example DNI for a male celebrity
-    const type = CuitType.Male; // Male type
+    const type = Gender.Male; // Male type
     const expectedCuit = "20112997505"; // Hypothetical CUIT for the given DNI
 
     const guessedCuit = guessCuit(dni, type);
@@ -54,7 +60,7 @@ describe("guessCuit", () => {
 
   it("should guess the CUIT for a female celebrity", () => {
     const dni = "04845350"; // Example DNI for a female celebrity
-    const type = CuitType.Female; // Female type
+    const type = Gender.Female; // Female type
     const expectedCuit = "27048453509"; // Hypothetical CUIT for the given DNI
 
     const guessedCuit = guessCuit(dni, type);
