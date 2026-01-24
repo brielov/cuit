@@ -1,0 +1,74 @@
+{
+  "name": "cuit",
+  "version": "2.0.0",
+  "description": "Lightweight utilities for validating, formatting, and generating Argentine CUIT/CUIL numbers",
+  "license": "MIT",
+  "author": "brielov",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/brielov/cuit.git"
+  },
+  "homepage": "https://github.com/brielov/cuit#readme",
+  "bugs": {
+    "url": "https://github.com/brielov/cuit/issues"
+  },
+  "keywords": [
+    "cuit",
+    "cuil",
+    "argentina",
+    "afip",
+    "tax",
+    "dni",
+    "validation",
+    "validator"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "bunup",
+    "dev": "bunup --watch",
+    "test": "bun test",
+    "type-check": "tsc --noEmit",
+    "lint": "oxlint",
+    "format": "oxfmt --write src",
+    "prepublishOnly": "bun run test && bun run build"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.6",
+    "bunup": "^0.16.20",
+    "oxfmt": "^0.26.0",
+    "oxlint": "^1.41.0",
+    "oxlint-tsgolint": "^0.11.1",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "typescript": ">=4.5.0"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  }
+}
