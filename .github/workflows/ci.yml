@@ -57,5 +57,4 @@ jobs:
           registry-url: "https://registry.npmjs.org"
 
       - name: Publish to npm
-        run: npm publish --provenance --access public
-        continue-on-error: true
+        run: npm publish --provenance --access public 2>&1 | tee publish.log || (grep -q "You cannot publish over the previously published versions" publish.log && echo "Version already published, skipping" || exit 1)
