@@ -188,6 +188,34 @@ describe("isValid", () => {
   });
 
   describe("rejects invalid CUITs", () => {
+    test.each(["00000000000", "00-00000000-0", "00/00000000/0", " 00.00000000.0 "])(
+      "rejects all-zero input: %s",
+      (input) => {
+        expect(isValid(input)).toBe(false);
+      },
+    );
+
+    test.each([
+      "20x12345678x6",
+      "abc20123456786",
+      "20123456786abc",
+      "20-1234a5678-6",
+      "20_12345678_6",
+      "20#12345678#6",
+      "20😀12345678😀6",
+    ])("rejects unsupported characters even with a valid underlying checksum: %s", (input) => {
+      expect(isValid(input)).toBe(false);
+    });
+
+    test("still checks the checksum for every supported separator", () => {
+      for (const separator of ["", "-", " ", ".", "/"]) {
+        for (let digit = 0; digit <= 9; digit++) {
+          const input = ["20", "12345678", String(digit)].join(separator);
+          expect(isValid(input)).toBe(digit === 6);
+        }
+      }
+    });
+
     test("returns false when check digit is wrong", () => {
       const validCuit = generate("12345678", "M");
       // Change the last digit

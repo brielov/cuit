@@ -58,6 +58,9 @@ normalize("20-12345678-6"); // "20123456786"
 ### `isValid(input: string): boolean`
 
 Validates whether a CUIT is valid using the mod 11 algorithm.
+Accepts digits with whitespace, hyphens, dots, or slashes as separators. Rejects
+all-zero input, letters, and other characters instead of silently stripping them.
+`normalize` and `format` remain permissive utilities, not validators.
 
 ```typescript
 isValid("20-12345678-6"); // true
