@@ -41,8 +41,8 @@ isValid("20123456786");   // true (works without separators)
 
 // Generate a CUIT from a DNI
 generate("12345678", "M"); // "20123456786" (male)
-generate("12345678", "F"); // "27123456781" (female)
-generate("12345678", "E"); // "30123456786" (entity/company)
+generate("12345678", "F"); // "27123456780" (female)
+generate("12345678", "E"); // "30123456781" (entity/company)
 
 // Format a CUIT
 format("20123456786");      // "20-12345678-6"
@@ -77,8 +77,8 @@ Generates a valid CUIT from a DNI and entity type.
 
 ```typescript
 generate("12345678", "M"); // "20123456786"
-generate("12.345.678", "F"); // "27123456781" (separators are stripped)
-generate("1234567", "M"); // "20012345672" (short DNIs are padded)
+generate("12.345.678", "F"); // "27123456780" (separators are stripped)
+generate("1234567", "M"); // "20012345675" (short DNIs are padded)
 ```
 
 ### `format(input: string, separator?: string): string`
@@ -132,7 +132,7 @@ Determines the entity type from a CUIT prefix.
 ```typescript
 getEntityType("20-12345678-6"); // "M" (male)
 getEntityType("27-12345678-1"); // "F" (female)
-getEntityType("30-12345678-6"); // "E" (entity)
+getEntityType("30-12345678-1"); // "E" (entity)
 getEntityType("99-12345678-0"); // null (unknown prefix)
 ```
 
