@@ -68,9 +68,10 @@ jobs:
       - name: Build
         run: bun run build
 
+      # Trusted publishing (OIDC, via id-token: write) needs npm >= 11.5.1; Node 24 ships it
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           registry-url: "https://registry.npmjs.org"
 
       - name: Publish to npm
