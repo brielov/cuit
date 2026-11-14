@@ -54,3 +54,54 @@
 - Exhaustive: `generate` over every 8-digit DNI × M/F/E (3×10⁸ calls) against the reference,
   5 min, 0 failures; the alternate prefix is used for exactly 9,090,909 DNIs per type (1/11).
 - Sanitizers, crash-recovery, concurrency stress: not applicable.
+
+### Hunt 1 (CONTRACTS, INPUTS, FAILURE-PATHS; no CONCURRENCY: nothing runs in parallel)
+Each claim was reproduced before being accepted.
+
+| Claim | Verdict |
+|-------|---------|
+| Publish step has no pipefail, so failed publishes are green | confirmed (CI log of run 43635987861: `bash -e`, E404, run green) |
+| npm `latest` 2.0.1 built from `d91539f` (not in repo) and still has #84 | confirmed; user action, see open items |
+| package.json 2.0.0 is behind npm 2.0.1 | confirmed; user action, see open items |
+| `getEntityType` maps 23-…-4 (female) to M | confirmed |
+| `isValid` throws for number / array input | confirmed (property also shrank to `[]`) |
+| CJS build has `require("node:module")`, breaks browser bundlers | confirmed (esbuild `--platform=browser`: Could not resolve "node:module") |
+| README `CuitPrefix` lacks "33"; JSDoc examples wrong | confirmed |
+| `getEntityType("20")` (bare prefix) returns null | rejected: every getter takes a CUIT and pads it; JSDoc now says "from a CUIT's prefix" |
+| `isValid("00000000019")` true (unknown prefix) | rejected as a bug: I1 and the README define isValid as a mod-11 check; recorded as a decision for the user |
+
+### Hunt 2 (same lenses, fresh hunters)
+| Claim | Verdict |
+|-------|---------|
+| Conflict grep reads prepublishOnly output; a failing test quoting the phrase exits 0 | confirmed |
+| Publish job cannot authenticate (placeholder token, npm 10.8.2 lacks OIDC login) | confirmed (same E404); user action, see open items |
+| `CuitPrefix` omits 24 and 34, which `getEntityType` accepts | confirmed; public type change, recorded for the user |
+| `FC_RUNS=abc` makes every property pass with 0 runs | confirmed gap; closed |
+| Nothing loads `dist` on Node 18 (`engines`) | confirmed gap; closed |
+| Stale test accepted M for a female CUIT | confirmed gap; closed |
+
+### Bugs fixed
+| Bug | Cause | Commit | What catches the class now |
+|-----|-------|--------|----------------------------|
+| Failed `npm publish` reported green | default `bash -e` has no pipefail; `tee` exit wins | `2dc074f` | `test/workflow.test.ts` runs the step under the shell GitHub picks with a fake npm |
+| Female 23-…-4 CUITs reported as M | `getEntityType` ignored the check digit for shared prefix 23 | `15bad3d` | property `getEntityType(generate(d, t)) === t` for all types |
+| `isValid` threw on non-strings | `RegExp.test` coerces, `normalize` does not | `cd9f2c9` | property over `fc.anything()` |
+| CJS build required `node:module` | bunup default target `node` | `07e54e6` | `test/package.test.ts`: bundles import nothing, CJS/ESM export the source API |
+| README/JSDoc drift | examples never executed | `0165823` | `test/docs.test.ts` runs every `fn(args); // result` example and compares the Types block |
+| Failed prepublishOnly could grep as "already published" | conflict grep unanchored over all tee'd output | `cac9038` | workflow tests for the registry wording and quoted output |
+
+Also: `63632af` (CI format check), `e160d14` (format), `55edfc9` (FC_RUNS guard, stale F test, docs fences, Node 18 smoke in CI).
+
+### Final state
+- Gate: type-check, lint, format, 262 tests, build, Node smoke: green.
+- Mutation: 123 killed, 1 timeout (`i--` infinite loop, detected), 0 survived.
+- Property tests at 200k cases after the fixes: green. Exhaustive `generate` check unchanged (logic untouched since).
+
+### Open items for the user
+1. **Publishing is broken.** The publish job sends setup-node's placeholder token; npm 10.8.2 (Node 20) cannot log in with OIDC. Either add `NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}`, or use trusted publishing: configure it on npmjs.com for this workflow and environment `npm`, and use Node 24 (npm ≥ 11.5.1). With pipefail, every master push is now red until this is fixed.
+2. **npm `latest` (2.0.1) has #84** and came from `d91539f`, which is not in the repo. The next release must be > 2.0.1; releasing 2.0.1 again would hit the "already published" skip.
+3. **`CuitPrefix`** omits 24 and 34 though `getEntityType` accepts them. Widening an exported type is an API decision.
+4. **`isValid` does not check the prefix** (`00-00000001-9` passes). Decide whether it should reject prefixes outside 20/23/24/27/30/33/34.
+5. **Non-string input**: only `isValid` is guarded; `format`, the getters and `generate` throw `TypeError` for numbers. Decide between documenting this and coercing.
+6. `generate` keeps the first 8 digits of a longer DNI and accepts empty or letter-only input (tested, intended); consider documenting or rejecting.
+7. CI uses `bun-version: latest`; pinning would make runs reproducible.
