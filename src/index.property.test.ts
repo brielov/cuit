@@ -91,6 +91,24 @@ describe("isValid matches the reference", () => {
   });
 });
 
+describe("isValid on input from untyped JavaScript callers", () => {
+  test("never throws and is false for anything that is not a string", () => {
+    fc.assert(
+      fc.property(fc.anything(), (value) => {
+        fc.pre(typeof value !== "string");
+        expect(isValid(value as unknown as string)).toBe(false);
+      }),
+      { numRuns },
+    );
+  });
+
+  test("is false for a valid CUIT held as a number or in an array", () => {
+    expect(isValid(20123456786 as unknown as string)).toBe(false);
+    expect(isValid(["20123456786"] as unknown as string)).toBe(false);
+    expect(isValid(null as unknown as string)).toBe(false);
+  });
+});
+
 describe("the checksum detects typing errors", () => {
   test("any single-digit substitution of a valid CUIT is invalid", () => {
     fc.assert(

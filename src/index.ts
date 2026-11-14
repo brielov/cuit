@@ -58,7 +58,7 @@ function computeCheckDigit(remainder: number): number {
 /**
  * Validates whether a CUIT is valid.
  * Allows whitespace, hyphens, dots, and slashes as separators. Rejects other
- * characters and all-zero input before checking the existing mod 11 checksum.
+ * characters, all-zero input and non-string values before checking the mod 11 checksum.
  *
  * @example
  * ```ts
@@ -67,7 +67,8 @@ function computeCheckDigit(remainder: number): number {
  * ```
  */
 export function isValid(input: string): boolean {
-  if (/[^0-9\s./-]/.test(input)) return false;
+  // A predicate must not throw: callers without type checking may pass numbers or arrays
+  if (typeof input !== "string" || /[^0-9\s./-]/.test(input)) return false;
   const cuit = normalize(input);
   if (cuit.length !== 11 || cuit === "00000000000") return false;
 
