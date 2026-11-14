@@ -100,6 +100,26 @@ describe("generate", () => {
     });
   });
 
+  describe("special case prefix 33", () => {
+    test("uses prefix 33 for entities when check digit would be invalid", () => {
+      // 30-69345023 has remainder 1; AFIP's CUIT is 33-69345023-9
+      expect(generate("69345023", "E")).toBe("33693450239");
+    });
+
+    test("all prefix 33 CUITs end in 9 and are valid", () => {
+      let found = 0;
+      for (let i = 10000000; i < 99999999; i += 99991) {
+        const cuit = generate(String(i), "E");
+        if (getPrefix(cuit) === "33") {
+          expect(getCheckDigit(cuit)).toBe("9");
+          expect(isValid(cuit)).toBe(true);
+          found++;
+        }
+      }
+      expect(found).toBeGreaterThan(0);
+    });
+  });
+
   describe("special case prefix 23", () => {
     // The algorithm uses prefix 23 when the check digit would be 1
     // We need to find DNIs that trigger this condition
@@ -128,6 +148,26 @@ describe("generate", () => {
         }
       }
       expect(found).toBe(true);
+    });
+  });
+
+  describe("remainder 1 has no valid check digit", () => {
+    test("rejects check digit 0 when remainder is 1", () => {
+      expect(isValid("20100000050")).toBe(false);
+      expect(isValid("30693450230")).toBe(false);
+    });
+
+    test("rejects every check digit when remainder is 1", () => {
+      for (let digit = 0; digit <= 9; digit++) {
+        expect(isValid(`2010000005${digit}`)).toBe(false);
+        expect(isValid(`3069345023${digit}`)).toBe(false);
+      }
+    });
+
+    test("accepts the reassigned prefixes", () => {
+      expect(generate("10000005", "M")).toBe("23100000059");
+      expect(isValid("23100000059")).toBe(true);
+      expect(isValid("33693450239")).toBe(true);
     });
   });
 

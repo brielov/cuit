@@ -9,6 +9,7 @@
  * - 23: Male/Female (special cases when check digit would be invalid)
  * - 27: Female individuals
  * - 30: Legal entities (companies)
+ * - 33: Legal entities (special case when check digit would be invalid)
  */
 
 /** Weights used in the check digit algorithm (mod 11) */
@@ -18,7 +19,7 @@ const WEIGHTS = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2] as const;
 export type EntityType = "M" | "F" | "E";
 
 /** Valid CUIT prefixes */
-export type CuitPrefix = "20" | "23" | "27" | "30";
+export type CuitPrefix = "20" | "23" | "27" | "30" | "33";
 
 /**
  * Removes all non-digit characters from the input.
@@ -47,9 +48,11 @@ function computeSum(digits: string): number {
 
 /**
  * Computes the expected check digit from the weighted sum remainder.
+ * A remainder of 1 yields 10, which no single digit can match: such a
+ * prefix + DNI combination has no valid check digit.
  */
 function computeCheckDigit(remainder: number): number {
-  return remainder === 0 ? 0 : remainder === 1 ? 0 : 11 - remainder;
+  return remainder === 0 ? 0 : 11 - remainder;
 }
 
 /**
@@ -83,9 +86,9 @@ export function isValid(input: string): boolean {
  *
  * @example
  * ```ts
- * generate("12345678", "M") // "20123456785"
+ * generate("12345678", "M") // "20123456786"
  * generate("12345678", "F") // "27123456780"
- * generate("12345678", "E") // "30123456780"
+ * generate("12345678", "E") // "30123456781"
  * ```
  */
 export function generate(dni: string, type: EntityType): string {
@@ -94,21 +97,18 @@ export function generate(dni: string, type: EntityType): string {
   const body = normalize(dni).padStart(8, "0").slice(0, 8);
   let prefix: CuitPrefix = type === "F" ? "27" : type === "M" ? "20" : "30";
 
-  let checkDigit = computeSum(prefix + body) % 11;
+  let checkDigit = computeCheckDigit(computeSum(prefix + body) % 11);
 
-  // Handle special case where check digit would be 1 (invalid)
-  if (checkDigit === 1) {
-    if (type === "M") {
-      prefix = "23";
+  // No valid check digit exists for this prefix (remainder 1): switch to the
+  // alternate prefix, which always yields a fixed check digit.
+  if (checkDigit === 10) {
+    if (type === "E") {
+      prefix = "33";
       checkDigit = 9;
-    } else if (type === "F") {
-      prefix = "23";
-      checkDigit = 4;
     } else {
-      checkDigit = 0;
+      prefix = "23";
+      checkDigit = type === "M" ? 9 : 4;
     }
-  } else if (checkDigit !== 0) {
-    checkDigit = 11 - checkDigit;
   }
 
   return `${prefix}${body}${checkDigit}`;
