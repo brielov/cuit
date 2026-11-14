@@ -52,7 +52,7 @@
     "test": "bun test",
     "type-check": "tsc --noEmit",
     "lint": "oxlint",
-    "format": "oxfmt --write src",
+    "format": "oxfmt --write src test",
     "prepublishOnly": "bun run test && bun run build"
   },
   "devDependencies": {

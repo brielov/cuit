@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [master]
 
+# An explicit `bash` adds `-o pipefail`; the implicit default (`bash -e`) does not, so a
+# failing command piped into `tee` would exit 0.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   test:
     runs-on: ubuntu-latest
