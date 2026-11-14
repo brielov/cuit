@@ -1,0 +1,11 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "testRunner": "command",
+  "commandRunner": { "command": "bun test" },
+  "mutate": ["src/index.ts"],
+  "concurrency": 8,
+  "reporters": ["clear-text", "json", "progress"],
+  "jsonReporter": { "fileName": "reports/mutation/mutation.json" },
+  "thresholds": { "high": 100, "low": 95, "break": null },
+  "tempDirName": ".stryker-tmp"
+}

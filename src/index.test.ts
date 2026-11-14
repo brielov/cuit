@@ -276,6 +276,14 @@ describe("isValid", () => {
       expect(isValid("2012345678901")).toBe(false);
     });
 
+    test("returns false for a valid CUIT with extra trailing digits", () => {
+      // The first 11 digits checksum correctly, so only the length check rejects these
+      expect(isValid("20123456786")).toBe(true);
+      expect(isValid("201234567860")).toBe(false);
+      expect(isValid("20-12345678-6-0")).toBe(false);
+      expect(isValid("2012345678699")).toBe(false);
+    });
+
     test("returns false for non-numeric input", () => {
       expect(isValid("abcdefghijk")).toBe(false);
     });
