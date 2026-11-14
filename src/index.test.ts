@@ -276,6 +276,14 @@ describe("isValid", () => {
       expect(isValid("2012345678901")).toBe(false);
     });
 
+    test("returns false for a valid CUIT with extra trailing digits", () => {
+      // The first 11 digits checksum correctly, so only the length check rejects these
+      expect(isValid("20123456786")).toBe(true);
+      expect(isValid("201234567860")).toBe(false);
+      expect(isValid("20-12345678-6-0")).toBe(false);
+      expect(isValid("2012345678699")).toBe(false);
+    });
+
     test("returns false for non-numeric input", () => {
       expect(isValid("abcdefghijk")).toBe(false);
     });
@@ -428,6 +436,18 @@ describe("getEntityType", () => {
     expect(getEntityType("23-12345678-9")).toBe("M");
   });
 
+  test("returns M for prefix 23 with check digit 9", () => {
+    // 20-10000005 has remainder 1, so generate reassigns it to 23-...-9
+    expect(generate("10000005", "M")).toBe("23100000059");
+    expect(getEntityType("23-10000005-9")).toBe("M");
+  });
+
+  test("returns F for prefix 23 with check digit 4", () => {
+    // 27-10000002 has remainder 1, so generate reassigns it to 23-...-4
+    expect(generate("10000002", "F")).toBe("23100000024");
+    expect(getEntityType("23-10000002-4")).toBe("F");
+  });
+
   test("returns M for prefix 24", () => {
     expect(getEntityType("24-12345678-9")).toBe("M");
   });
@@ -459,12 +479,8 @@ describe("getEntityType", () => {
     const femaleCuit = generate("12345678", "F");
     const entityCuit = generate("12345678", "E");
 
-    // Male CUITs have prefix 20 or 23
-    expect(["M"].includes(getEntityType(maleCuit)!)).toBe(true);
-    // Female CUITs have prefix 27 or 23, but we return M for 23 by default
-    const femaleType = getEntityType(femaleCuit);
-    expect(femaleType === "F" || femaleType === "M").toBe(true);
-    // Entity CUITs have prefix 30
+    expect(getEntityType(maleCuit)).toBe("M");
+    expect(getEntityType(femaleCuit)).toBe("F");
     expect(getEntityType(entityCuit)).toBe("E");
   });
 });

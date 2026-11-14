@@ -11,7 +11,7 @@ Lightweight utilities for validating, formatting, and generating Argentine CUIT/
 
 CUIT (Clave Única de Identificación Tributaria) is Argentina's tax identification number. It's an 11-digit number with the format `XX-XXXXXXXX-X`:
 
-- **First 2 digits**: Type prefix (20/23/24 = male, 27 = female, 30/33/34 = company)
+- **First 2 digits**: Type prefix (20/24 = male, 27 = female, 23 = male or female, 30/33/34 = company)
 - **Middle 8 digits**: DNI (national ID) or company registration number
 - **Last digit**: Check digit (mod 11 algorithm)
 
@@ -127,11 +127,14 @@ getCheckDigit("20-12345678-6"); // "6"
 
 ### `getEntityType(input: string): EntityType | null`
 
-Determines the entity type from a CUIT prefix.
+Determines the entity type from a CUIT's prefix. Prefix 23 is used for both males and
+females when the usual prefix has no valid check digit; the check digit tells them apart
+(9 for males, 4 for females).
 
 ```typescript
 getEntityType("20-12345678-6"); // "M" (male)
-getEntityType("27-12345678-1"); // "F" (female)
+getEntityType("27-12345678-0"); // "F" (female)
+getEntityType("23-10000002-4"); // "F" (female, prefix 23)
 getEntityType("30-12345678-1"); // "E" (entity)
 getEntityType("99-12345678-0"); // null (unknown prefix)
 ```
@@ -140,7 +143,7 @@ getEntityType("99-12345678-0"); // null (unknown prefix)
 
 ```typescript
 type EntityType = "M" | "F" | "E";
-type CuitPrefix = "20" | "23" | "27" | "30";
+type CuitPrefix = "20" | "23" | "27" | "30" | "33";
 ```
 
 ## Features

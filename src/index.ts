@@ -58,16 +58,18 @@ function computeCheckDigit(remainder: number): number {
 /**
  * Validates whether a CUIT is valid.
  * Allows whitespace, hyphens, dots, and slashes as separators. Rejects other
- * characters and all-zero input before checking the existing mod 11 checksum.
+ * characters, all-zero input and non-string values before checking the mod 11 checksum.
  *
  * @example
  * ```ts
- * isValid("20-12345678-9") // true or false
- * isValid("20123456789")   // also works without separators
+ * isValid("20-12345678-6") // true
+ * isValid("20123456786")   // true (works without separators)
+ * isValid("20-12345678-0") // false (wrong check digit)
  * ```
  */
 export function isValid(input: string): boolean {
-  if (/[^0-9\s./-]/.test(input)) return false;
+  // A predicate must not throw: callers without type checking may pass numbers or arrays
+  if (typeof input !== "string" || /[^0-9\s./-]/.test(input)) return false;
   const cuit = normalize(input);
   if (cuit.length !== 11 || cuit === "00000000000") return false;
 
@@ -119,8 +121,8 @@ export function generate(dni: string, type: EntityType): string {
  *
  * @example
  * ```ts
- * format("20123456789")      // "20-12345678-9"
- * format("20123456789", "/") // "20/12345678/9"
+ * format("20123456786")      // "20-12345678-6"
+ * format("20123456786", "/") // "20/12345678/6"
  * ```
  */
 export function format(input: string, separator: string = "-"): string {
@@ -133,7 +135,7 @@ export function format(input: string, separator: string = "-"): string {
  *
  * @example
  * ```ts
- * getPrefix("20-12345678-9") // "20"
+ * getPrefix("20-12345678-6") // "20"
  * ```
  */
 export function getPrefix(input: string): string {
@@ -145,7 +147,7 @@ export function getPrefix(input: string): string {
  *
  * @example
  * ```ts
- * getDni("20-12345678-9") // "12345678"
+ * getDni("20-12345678-6") // "12345678"
  * ```
  */
 export function getDni(input: string): string {
@@ -157,7 +159,7 @@ export function getDni(input: string): string {
  *
  * @example
  * ```ts
- * getCheckDigit("20-12345678-9") // "9"
+ * getCheckDigit("20-12345678-6") // "6"
  * ```
  */
 export function getCheckDigit(input: string): string {
@@ -165,21 +167,26 @@ export function getCheckDigit(input: string): string {
 }
 
 /**
- * Determines the entity type from a CUIT prefix.
+ * Determines the entity type from a CUIT's prefix.
+ *
+ * Prefix 23 is shared: `generate` assigns it to both males (check digit 9) and
+ * females (check digit 4), so for 23 the check digit decides.
  *
  * @returns The entity type, or `null` if unknown prefix
  *
  * @example
  * ```ts
- * getEntityType("20-12345678-9") // "M"
- * getEntityType("27-12345678-9") // "F"
- * getEntityType("30-12345678-9") // "E"
+ * getEntityType("20-12345678-6") // "M"
+ * getEntityType("27-12345678-0") // "F"
+ * getEntityType("23-10000002-4") // "F"
+ * getEntityType("30-12345678-1") // "E"
  * ```
  */
 export function getEntityType(input: string): EntityType | null {
   switch (getPrefix(input)) {
-    case "20":
     case "23":
+      return getCheckDigit(input) === "4" ? "F" : "M";
+    case "20":
     case "24":
       return "M";
     case "27":

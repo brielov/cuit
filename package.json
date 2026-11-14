@@ -52,12 +52,16 @@
     "test": "bun test",
     "type-check": "tsc --noEmit",
     "lint": "oxlint",
-    "format": "oxfmt --write src",
+    "format": "oxfmt --write src test",
+    "format:check": "oxfmt --check src test",
+    "mutation": "stryker run",
     "prepublishOnly": "bun run test && bun run build"
   },
   "devDependencies": {
+    "@stryker-mutator/core": "^10.1.1",
     "@types/bun": "^1.3.6",
     "bunup": "^0.16.20",
+    "fast-check": "^4.10.2",
     "oxfmt": "^0.26.0",
     "oxlint": "^1.41.0",
     "oxlint-tsgolint": "^0.11.1",
