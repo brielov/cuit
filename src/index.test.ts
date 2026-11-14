@@ -479,12 +479,8 @@ describe("getEntityType", () => {
     const femaleCuit = generate("12345678", "F");
     const entityCuit = generate("12345678", "E");
 
-    // Male CUITs have prefix 20 or 23
-    expect(["M"].includes(getEntityType(maleCuit)!)).toBe(true);
-    // Female CUITs have prefix 27 or 23, but we return M for 23 by default
-    const femaleType = getEntityType(femaleCuit);
-    expect(femaleType === "F" || femaleType === "M").toBe(true);
-    // Entity CUITs have prefix 30
+    expect(getEntityType(maleCuit)).toBe("M");
+    expect(getEntityType(femaleCuit)).toBe("F");
     expect(getEntityType(entityCuit)).toBe("E");
   });
 });

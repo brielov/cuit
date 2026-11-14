@@ -29,7 +29,7 @@ function examples(where: string, lines: string[]): Example[] {
 const readmeLines = readme.split("\n");
 let inTsBlock = false;
 const readmeCode = readmeLines.map((line) => {
-  if (line.startsWith("```")) inTsBlock = line === "```typescript";
+  if (line.startsWith("```")) inTsBlock = /^```(typescript|ts|javascript|js)$/.test(line);
   return inTsBlock ? line : "";
 });
 const jsdocCode = source.split("\n").map((line) => line.replace(/^\s*\*\s?/, ""));

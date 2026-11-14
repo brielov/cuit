@@ -14,6 +14,10 @@ import {
 
 /** Raise with FC_RUNS=100000 bun test for a long run. */
 const numRuns = Number(process.env.FC_RUNS ?? 1000);
+// fast-check passes a property after 0 runs, so a bad FC_RUNS would test nothing
+if (!Number.isInteger(numRuns) || numRuns < 1) {
+  throw new Error(`FC_RUNS must be a positive integer, got ${process.env.FC_RUNS}`);
+}
 
 /**
  * Independent reference: a CUIT is valid when the weighted sum of all 11 digits,
