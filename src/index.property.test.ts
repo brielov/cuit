@@ -155,11 +155,10 @@ describe("generate", () => {
     );
   });
 
-  test("entity CUITs are recognized as entities", () => {
+  test("getEntityType recovers the type a CUIT was generated for", () => {
     fc.assert(
-      fc.property(digitString(8, 8), (dni) => {
-        expect(getEntityType(generate(dni, "E"))).toBe("E");
-        expect(getEntityType(generate(dni, "M"))).toBe("M");
+      fc.property(digitString(8, 8), entityType, (dni, type) => {
+        expect(getEntityType(generate(dni, type))).toBe(type);
       }),
       { numRuns },
     );

@@ -436,6 +436,18 @@ describe("getEntityType", () => {
     expect(getEntityType("23-12345678-9")).toBe("M");
   });
 
+  test("returns M for prefix 23 with check digit 9", () => {
+    // 20-10000005 has remainder 1, so generate reassigns it to 23-...-9
+    expect(generate("10000005", "M")).toBe("23100000059");
+    expect(getEntityType("23-10000005-9")).toBe("M");
+  });
+
+  test("returns F for prefix 23 with check digit 4", () => {
+    // 27-10000002 has remainder 1, so generate reassigns it to 23-...-4
+    expect(generate("10000002", "F")).toBe("23100000024");
+    expect(getEntityType("23-10000002-4")).toBe("F");
+  });
+
   test("returns M for prefix 24", () => {
     expect(getEntityType("24-12345678-9")).toBe("M");
   });

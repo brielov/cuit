@@ -165,7 +165,10 @@ export function getCheckDigit(input: string): string {
 }
 
 /**
- * Determines the entity type from a CUIT prefix.
+ * Determines the entity type from a CUIT's prefix.
+ *
+ * Prefix 23 is shared: `generate` assigns it to both males (check digit 9) and
+ * females (check digit 4), so for 23 the check digit decides.
  *
  * @returns The entity type, or `null` if unknown prefix
  *
@@ -173,13 +176,15 @@ export function getCheckDigit(input: string): string {
  * ```ts
  * getEntityType("20-12345678-9") // "M"
  * getEntityType("27-12345678-9") // "F"
+ * getEntityType("23-10000002-4") // "F"
  * getEntityType("30-12345678-9") // "E"
  * ```
  */
 export function getEntityType(input: string): EntityType | null {
   switch (getPrefix(input)) {
-    case "20":
     case "23":
+      return getCheckDigit(input) === "4" ? "F" : "M";
+    case "20":
     case "24":
       return "M";
     case "27":
