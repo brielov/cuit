@@ -133,7 +133,7 @@ females when the usual prefix has no valid check digit; the check digit tells th
 
 ```typescript
 getEntityType("20-12345678-6"); // "M" (male)
-getEntityType("27-12345678-1"); // "F" (female)
+getEntityType("27-12345678-0"); // "F" (female)
 getEntityType("23-10000002-4"); // "F" (female, prefix 23)
 getEntityType("30-12345678-1"); // "E" (entity)
 getEntityType("99-12345678-0"); // null (unknown prefix)
@@ -143,7 +143,7 @@ getEntityType("99-12345678-0"); // null (unknown prefix)
 
 ```typescript
 type EntityType = "M" | "F" | "E";
-type CuitPrefix = "20" | "23" | "27" | "30";
+type CuitPrefix = "20" | "23" | "27" | "30" | "33";
 ```
 
 ## Features

@@ -62,8 +62,9 @@ function computeCheckDigit(remainder: number): number {
  *
  * @example
  * ```ts
- * isValid("20-12345678-9") // true or false
- * isValid("20123456789")   // also works without separators
+ * isValid("20-12345678-6") // true
+ * isValid("20123456786")   // true (works without separators)
+ * isValid("20-12345678-0") // false (wrong check digit)
  * ```
  */
 export function isValid(input: string): boolean {
@@ -120,8 +121,8 @@ export function generate(dni: string, type: EntityType): string {
  *
  * @example
  * ```ts
- * format("20123456789")      // "20-12345678-9"
- * format("20123456789", "/") // "20/12345678/9"
+ * format("20123456786")      // "20-12345678-6"
+ * format("20123456786", "/") // "20/12345678/6"
  * ```
  */
 export function format(input: string, separator: string = "-"): string {
@@ -134,7 +135,7 @@ export function format(input: string, separator: string = "-"): string {
  *
  * @example
  * ```ts
- * getPrefix("20-12345678-9") // "20"
+ * getPrefix("20-12345678-6") // "20"
  * ```
  */
 export function getPrefix(input: string): string {
@@ -146,7 +147,7 @@ export function getPrefix(input: string): string {
  *
  * @example
  * ```ts
- * getDni("20-12345678-9") // "12345678"
+ * getDni("20-12345678-6") // "12345678"
  * ```
  */
 export function getDni(input: string): string {
@@ -158,7 +159,7 @@ export function getDni(input: string): string {
  *
  * @example
  * ```ts
- * getCheckDigit("20-12345678-9") // "9"
+ * getCheckDigit("20-12345678-6") // "6"
  * ```
  */
 export function getCheckDigit(input: string): string {
@@ -175,10 +176,10 @@ export function getCheckDigit(input: string): string {
  *
  * @example
  * ```ts
- * getEntityType("20-12345678-9") // "M"
- * getEntityType("27-12345678-9") // "F"
+ * getEntityType("20-12345678-6") // "M"
+ * getEntityType("27-12345678-0") // "F"
  * getEntityType("23-10000002-4") // "F"
- * getEntityType("30-12345678-9") // "E"
+ * getEntityType("30-12345678-1") // "E"
  * ```
  */
 export function getEntityType(input: string): EntityType | null {
