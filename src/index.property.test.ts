@@ -188,9 +188,7 @@ describe("format and the getters agree", () => {
     fc.assert(
       fc.property(fc.string(), separator, (s, sep) => {
         const formatted = format(s, sep);
-        expect(formatted).toBe(
-          [getPrefix(s), getDni(s), getCheckDigit(s)].join(sep),
-        );
+        expect(formatted).toBe([getPrefix(s), getDni(s), getCheckDigit(s)].join(sep));
         expect(normalize(formatted)).toBe(normalize(s).padStart(11, "0").slice(0, 11));
       }),
       { numRuns },

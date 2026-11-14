@@ -47,15 +47,12 @@ describe("documented examples", () => {
     expect(all.length).toBeGreaterThan(30);
   });
 
-  test.each(all.map((e) => [`${e.where} ${e.fn}(${e.args})`, e] as const))(
-    "%s",
-    (_, e) => {
-      const expected = documented(e.comment);
-      if (!expected.ok) throw new Error(`${e.where}: no checkable result in "// ${e.comment}"`);
-      const args = new Function(`return [${e.args}]`)() as unknown[];
-      expect(api[e.fn]!(...args)).toBe(expected.value);
-    },
-  );
+  test.each(all.map((e) => [`${e.where} ${e.fn}(${e.args})`, e] as const))("%s", (_, e) => {
+    const expected = documented(e.comment);
+    if (!expected.ok) throw new Error(`${e.where}: no checkable result in "// ${e.comment}"`);
+    const args = new Function(`return [${e.args}]`)() as unknown[];
+    expect(api[e.fn]!(...args)).toBe(expected.value);
+  });
 });
 
 describe("README Types block", () => {
