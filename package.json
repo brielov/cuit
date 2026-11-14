@@ -53,6 +53,8 @@
     "type-check": "tsc --noEmit",
     "lint": "oxlint",
     "format": "oxfmt --write src test",
+    "format:check": "oxfmt --check src test",
+    "mutation": "stryker run",
     "prepublishOnly": "bun run test && bun run build"
   },
   "devDependencies": {
