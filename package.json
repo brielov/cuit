@@ -1,6 +1,6 @@
 {
   "name": "cuit",
-  "version": "2.0.0",
+  "version": "2.0.2",
   "description": "Validate, format and generate Argentine CUIT and CUIL numbers. Zero dependencies, fully typed.",
   "license": "MIT",
   "author": "brielov",
