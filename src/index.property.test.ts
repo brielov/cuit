@@ -14,6 +14,8 @@ import {
 
 /** Raise with FC_RUNS=100000 bun test for a long run. */
 const numRuns = Number(process.env.FC_RUNS ?? 1000);
+/** The exhaustive code-unit tests take seconds under mutation-testing instrumentation. */
+const EXHAUSTIVE_TIMEOUT = 60_000;
 // fast-check passes a property after 0 runs, so a bad FC_RUNS would test nothing
 if (!Number.isInteger(numRuns) || numRuns < 1) {
   throw new Error(`FC_RUNS must be a positive integer, got ${process.env.FC_RUNS}`);
@@ -84,6 +86,44 @@ describe("isValid matches the reference", () => {
     );
   });
 
+  test(
+    "for every UTF-16 code unit used as a separator or stray character",
+    () => {
+      // Which characters count as separators is easy to get subtly wrong; check every unit
+      for (let code = 0; code < 0x10000; code++) {
+        const ch = String.fromCharCode(code);
+        for (const s of [`20${ch}12345678${ch}6`, `${ch}20123456786`, `2012345678${ch}0`]) {
+          if (isValid(s) !== referenceIsValid(s)) {
+            throw new Error(`U+${code.toString(16).padStart(4, "0")} in ${JSON.stringify(s)}`);
+          }
+        }
+      }
+    },
+    EXHAUSTIVE_TIMEOUT,
+  );
+
+  test("with any ASCII character replacing any position of a valid CUIT", () => {
+    // A corrupted CUIT must never pass, so corrupt every position of several valid ones
+    const chars = [
+      ...Array.from({ length: 128 }, (_, c) => String.fromCharCode(c)),
+      "\u00a0",
+      "\u0660",
+      "\u2028",
+      "\ud800",
+    ];
+    const valid = ["20123456786", "27100000024", "33693450239", "23100000059", "30123456781"];
+    for (const cuit of valid) {
+      for (const base of [cuit, format(cuit), format(cuit, " ")]) {
+        for (let pos = 0; pos < base.length; pos++) {
+          for (const ch of chars) {
+            const s = base.slice(0, pos) + ch + base.slice(pos + 1);
+            if (isValid(s) !== referenceIsValid(s)) throw new Error(JSON.stringify(s));
+          }
+        }
+      }
+    }
+  });
+
   test("on valid CUITs written with any separator", () => {
     fc.assert(
       fc.property(validCuit, separator, (c, sep) => {
@@ -110,6 +150,20 @@ describe("isValid on input from untyped JavaScript callers", () => {
     expect(isValid(20123456786 as unknown as string)).toBe(false);
     expect(isValid(["20123456786"] as unknown as string)).toBe(false);
     expect(isValid(null as unknown as string)).toBe(false);
+  });
+});
+
+describe("normalize and the getters on input from untyped JavaScript callers", () => {
+  test("throw a TypeError for anything that is not a string", () => {
+    const fns = [normalize, format, getPrefix, getDni, getCheckDigit, getEntityType];
+    fc.assert(
+      fc.property(fc.anything(), (value) => {
+        fc.pre(typeof value !== "string");
+        for (const fn of fns) expect(() => fn(value as unknown as string)).toThrow(TypeError);
+        expect(() => generate(value as unknown as string, "M")).toThrow(TypeError);
+      }),
+      { numRuns },
+    );
   });
 });
 
@@ -187,6 +241,26 @@ describe("generate", () => {
   });
 });
 
+/** What the getters are defined to read: the first 11 digits, left-padded with zeros. */
+const referencePad = (s: string) =>
+  s
+    .split("")
+    .filter((ch) => ch >= "0" && ch <= "9")
+    .join("")
+    .padStart(11, "0")
+    .slice(0, 11);
+
+function matchesReferencePad(s: string): boolean {
+  const p = referencePad(s);
+  return (
+    getPrefix(s) === p.slice(0, 2) &&
+    getDni(s) === p.slice(2, 10) &&
+    getCheckDigit(s) === p.slice(10) &&
+    format(s, "/") === `${p.slice(0, 2)}/${p.slice(2, 10)}/${p.slice(10)}` &&
+    getEntityType(s) === getEntityType(p)
+  );
+}
+
 describe("format and the getters agree", () => {
   test("format is prefix + DNI + check digit joined by the separator", () => {
     fc.assert(
@@ -197,6 +271,98 @@ describe("format and the getters agree", () => {
       }),
       { numRuns },
     );
+  });
+
+  test(
+    "match a reference pad for every UTF-16 code unit in the separator and digit positions",
+    () => {
+      // Check format and the getters against their definition, whatever the separator
+      for (let code = 0; code < 0x10000; code++) {
+        const ch = String.fromCharCode(code);
+        for (const s of [
+          `20${ch}12345678${ch}6`,
+          `20-12345678${ch}6`,
+          `2${ch}123456786`,
+          `20${ch}123456786`,
+        ]) {
+          if (!matchesReferencePad(s)) {
+            throw new Error(`U+${code.toString(16).padStart(4, "0")} in ${JSON.stringify(s)}`);
+          }
+        }
+      }
+    },
+    EXHAUSTIVE_TIMEOUT,
+  );
+
+  test("match a reference pad with any ASCII character at any position of the common shapes", () => {
+    // Bases without zeros, so a "0" at a separator position cannot pass for a separator
+    const chars = [
+      ...Array.from({ length: 128 }, (_, c) => String.fromCharCode(c)),
+      "\u00a0",
+      "\u0660",
+      "\ud800",
+      "\uffff",
+    ];
+    for (const base of ["21345678912", "21-34567891-2", "2134567891234"]) {
+      for (let pos = 0; pos < base.length; pos++) {
+        for (const ch of chars) {
+          const s = base.slice(0, pos) + ch + base.slice(pos + 1);
+          if (!matchesReferencePad(s)) throw new Error(JSON.stringify(s));
+        }
+      }
+    }
+  });
+
+  test("match a reference pad on 11- and 13-character strings that are mostly not digits", () => {
+    // Mostly non-digit strings of CUIT length: all non-digits, and one digit anywhere
+    for (const filler of [" ", "-", ".", "/", "a", "\u00a0", "\u0660"]) {
+      for (const length of [11, 13]) {
+        const blank = filler.repeat(length);
+        if (!matchesReferencePad(blank)) throw new Error(JSON.stringify(blank));
+        for (let pos = 0; pos < length; pos++) {
+          for (const digit of ["0", "7"]) {
+            const s = blank.slice(0, pos) + digit + blank.slice(pos + 1);
+            if (!matchesReferencePad(s)) throw new Error(JSON.stringify(s));
+          }
+        }
+      }
+    }
+  });
+
+  test("normalize matches the reference around the formatted shape", () => {
+    // Near the `XX-XXXXXXXX-X` shape, normalize must still strip exactly the non-digits
+    const strip = (s: string) => s.replace(/[^0-9]/g, "");
+    const chars = Array.from({ length: 128 }, (_, c) => String.fromCharCode(c));
+    const cases = [
+      "20-abcdefgh-6",
+      "20-1234567x-6",
+      "20-12345678-x",
+      "20-12345678-",
+      "2-12345678-6",
+    ];
+    for (const base of ["20-12345678-6", "21 34567891 2"]) {
+      cases.push(base + "x", "x" + base, base + "7", base.slice(0, 12), base.slice(1));
+      for (let pos = 0; pos < base.length; pos++) {
+        for (const ch of chars) cases.push(base.slice(0, pos) + ch + base.slice(pos + 1));
+      }
+    }
+    for (const s of cases) {
+      if (normalize(s) !== strip(s)) throw new Error(JSON.stringify(s));
+    }
+  });
+
+  test("normalize, format and the getters handle long input (past the short-input fast path)", () => {
+    for (const s of [
+      "20-12345678-6" + " -".repeat(20),
+      "x".repeat(40) + "20123456786",
+      "1".repeat(40),
+      "CUIT del cliente: 20.123.456.78-6 (verificado)",
+      "2:1-2.3/4 5\u00a06\u20607a8b9c0d1e2f3 / ref. 4-5-6",
+    ]) {
+      expect(s.length).toBeGreaterThan(32);
+      expect(normalize(s)).toBe(s.replace(/[^0-9]/g, ""));
+      if (!matchesReferencePad(s)) throw new Error(JSON.stringify(s));
+    }
   });
 
   test("format round-trips an 11-digit CUIT", () => {
