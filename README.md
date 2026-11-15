@@ -153,7 +153,7 @@ type CuitPrefix = "20" | "23" | "27" | "30" | "33";
 - Works in Node.js, browsers, and edge runtimes
 - ESM and CommonJS support
 - Tree-shakeable
-- Tiny bundle size (~800 bytes gzipped)
+- Tiny bundle size (under 600 bytes gzipped, checked in CI)
 
 ## License
 

@@ -15,7 +15,21 @@ beforeAll(() => {
   expect(build.exitCode).toBe(0);
 });
 
+/**
+ * Gzipped size limits in bytes. Small size is part of what the package offers: a change that
+ * needs more must raise these on purpose, and say why. Measured with Bun.gzipSync at level 9.
+ */
+const GZIP_BUDGET = { "dist/index.js": 600, "dist/index.cjs": 900 };
+
 describe("built package", () => {
+  test.each(Object.entries(GZIP_BUDGET))(
+    "%s stays within %d bytes gzipped",
+    async (file, budget) => {
+      const bytes = await Bun.file(join(root, file)).bytes();
+      expect(Bun.gzipSync(bytes, { level: 9 }).length).toBeLessThanOrEqual(budget);
+    },
+  );
+
   test("every path in package.json exports and main/module/types exists", () => {
     const paths = [
       pkg.main,
