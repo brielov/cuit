@@ -3,17 +3,26 @@
 [![npm version](https://img.shields.io/npm/v/cuit.svg)](https://www.npmjs.com/package/cuit)
 [![npm downloads](https://img.shields.io/npm/dm/cuit.svg)](https://www.npmjs.com/package/cuit)
 [![CI](https://github.com/brielov/cuit/actions/workflows/ci.yml/badge.svg)](https://github.com/brielov/cuit/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Lightweight utilities for validating, formatting, and generating Argentine CUIT/CUIL numbers.
+Validate, format and generate Argentine CUIT and CUIL numbers. Zero dependencies, fully typed,
+under 600 bytes gzipped.
 
-## What is a CUIT?
+```typescript
+import { isValid, format, generate } from "cuit";
 
-CUIT (Clave Única de Identificación Tributaria) is Argentina's tax identification number. It's an 11-digit number with the format `XX-XXXXXXXX-X`:
+isValid("20-12345678-6"); // true
+format("20123456786"); // "20-12345678-6"
+generate("12345678", "F"); // "27123456780"
+```
 
-- **First 2 digits**: Type prefix (20/24 = male, 27 = female, 23 = male or female, 30/33/34 = company)
-- **Middle 8 digits**: DNI (national ID) or company registration number
-- **Last digit**: Check digit (mod 11 algorithm)
+- **Correct check digits**, including the cases where the usual prefix has no valid check digit
+  (`23-` and `33-` CUITs).
+- **Strict validation, permissive helpers**: `isValid` rejects anything that is not a CUIT;
+  `normalize`, `format` and the getters accept any input and never throw on strings.
+- **Runs anywhere**: Node.js 18+, Bun, Deno, browsers and edge runtimes; ESM and CommonJS;
+  tree-shakeable.
+- **Small and checked**: the bundle size limit and every example in this README are verified in CI.
 
 ## Installation
 
@@ -29,114 +38,107 @@ pnpm add cuit
 bun add cuit
 ```
 
-## Usage
+## What is a CUIT?
 
-```typescript
-import { isValid, generate, format, normalize } from "cuit";
+The CUIT (Clave Única de Identificación Tributaria) is the tax ID that ARCA, formerly AFIP,
+assigns to people and companies in Argentina. The CUIL, used for employment and social
+security, has the same structure. Both are 11 digits, usually written `XX-XXXXXXXX-X`:
 
-// Validate a CUIT
-isValid("20-12345678-6"); // true
-isValid("20-12345678-0"); // false (wrong check digit)
-isValid("20123456786");   // true (works without separators)
+| Part | Digits | Meaning |
+|------|--------|---------|
+| Prefix | 2 | `20` male, `27` female, `30` company. `23`, `24`, `33` and `34` are used in special cases (see below). |
+| Body | 8 | The person's DNI, left-padded with zeros, or a number assigned to the company. |
+| Check digit | 1 | Computed from the other 10 digits with a mod 11 algorithm. |
 
-// Generate a CUIT from a DNI
-generate("12345678", "M"); // "20123456786" (male)
-generate("12345678", "F"); // "27123456780" (female)
-generate("12345678", "E"); // "30123456781" (entity/company)
-
-// Format a CUIT
-format("20123456786");      // "20-12345678-6"
-format("20123456786", "/"); // "20/12345678/6"
-format("20123456786", "");  // "20123456786"
-
-// Normalize (remove separators)
-normalize("20-12345678-6"); // "20123456786"
-```
+The check digit is `11 - (sum % 11)`, where `sum` multiplies the first 10 digits by
+`5, 4, 3, 2, 7, 6, 5, 4, 3, 2`. A remainder of 0 gives check digit 0. A remainder of 1 would
+give 10, which is not a digit, so the number is reassigned instead: men get prefix `23` with
+check digit `9`, women `23` with `4`, and companies `33` with `9`. `generate` and
+`getEntityType` follow these rules.
 
 ## API
 
 ### `isValid(input: string): boolean`
 
-Validates whether a CUIT is valid using the mod 11 algorithm.
-Accepts digits with whitespace, hyphens, dots, or slashes as separators. Rejects
-all-zero input, letters, and other characters instead of silently stripping them.
-`normalize` and `format` remain permissive utilities, not validators.
+Returns `true` when `input` is a CUIT with a correct check digit. Separators are optional:
+hyphens, dots, slashes and whitespace are allowed anywhere. Anything else makes it invalid,
+including letters, a 12th digit, the all-zero number and non-string values (it never throws).
 
 ```typescript
 isValid("20-12345678-6"); // true
-isValid("invalid");       // false
-isValid("20123456780");   // false (wrong check digit)
+isValid("20 12345678 6"); // true
+isValid("20123456786"); // true
+isValid("20-12345678-0"); // false (wrong check digit)
+isValid("20-1234567X-6"); // false (letters are never stripped)
+isValid("20-12345678-6-0"); // false (12 digits)
+isValid("00000000000"); // false
 ```
+
+To find a CUIT inside free text, extract it first; `isValid("CUIT 20-12345678-6")` is `false`.
 
 ### `generate(dni: string, type: EntityType): string`
 
-Generates a valid CUIT from a DNI and entity type.
-
-- `dni` - The DNI number (8 digits, can include separators)
-- `type` - `"M"` (male), `"F"` (female), or `"E"` (entity/company)
+Builds the CUIT for a DNI and an entity type: `"M"` (male), `"F"` (female) or `"E"` (company).
+Non-digits in `dni` are ignored, shorter DNIs are left-padded with zeros and only the first 8
+digits are used. Returns `""` for an unknown type.
 
 ```typescript
 generate("12345678", "M"); // "20123456786"
-generate("12.345.678", "F"); // "27123456780" (separators are stripped)
-generate("1234567", "M"); // "20012345675" (short DNIs are padded)
+generate("12345678", "E"); // "30123456781"
+generate("12.345.678", "F"); // "27123456780"
+generate("1234567", "M"); // "20012345675"
+generate("10000005", "M"); // "23100000059" (20-10000005 has no valid check digit)
+generate("10000002", "F"); // "23100000024"
+generate("69345023", "E"); // "33693450239"
 ```
 
 ### `format(input: string, separator?: string): string`
 
-Formats a CUIT with the specified separator (default: `"-"`).
+Writes a CUIT as `XX-XXXXXXXX-X`, or with another separator. It takes the digits of `input`,
+left-padded or truncated to 11, and does not validate them.
 
 ```typescript
-format("20123456786");      // "20-12345678-6"
+format("20123456786"); // "20-12345678-6"
 format("20123456786", "/"); // "20/12345678/6"
-format("20123456786", " "); // "20 12345678 6"
-format("20123456786", "");  // "20123456786"
+format("20-12345678-6", "."); // "20.12345678.6"
+format("123456789"); // "00-12345678-9"
 ```
 
 ### `normalize(input: string): string`
 
-Removes all non-digit characters from the input.
+Removes every character that is not a digit.
 
 ```typescript
 normalize("20-12345678-6"); // "20123456786"
-normalize("20.12345678.6"); // "20123456786"
+normalize("CUIT: 20.12345678/6"); // "20123456786"
 ```
 
-### `getPrefix(input: string): string`
+### `getPrefix`, `getDni`, `getCheckDigit`
 
-Extracts the 2-digit prefix from a CUIT.
+`getPrefix(input: string): string`, `getDni(input: string): string` and
+`getCheckDigit(input: string): string` return the parts of a CUIT, reading the digits the same
+way `format` does.
 
 ```typescript
 getPrefix("20-12345678-6"); // "20"
-```
-
-### `getDni(input: string): string`
-
-Extracts the 8-digit DNI from a CUIT.
-
-```typescript
 getDni("20-12345678-6"); // "12345678"
-```
-
-### `getCheckDigit(input: string): string`
-
-Extracts the check digit from a CUIT.
-
-```typescript
 getCheckDigit("20-12345678-6"); // "6"
 ```
 
 ### `getEntityType(input: string): EntityType | null`
 
-Determines the entity type from a CUIT's prefix. Prefix 23 is used for both males and
-females when the usual prefix has no valid check digit; the check digit tells them apart
-(9 for males, 4 for females).
+Tells from the prefix whether a CUIT belongs to a man, a woman or a company. For prefix `23`,
+the check digit decides: `4` is female, anything else male. Returns `null` for an unknown
+prefix.
 
 ```typescript
-getEntityType("20-12345678-6"); // "M" (male)
-getEntityType("27-12345678-0"); // "F" (female)
-getEntityType("23-10000002-4"); // "F" (female, prefix 23)
-getEntityType("30-12345678-1"); // "E" (entity)
-getEntityType("99-12345678-0"); // null (unknown prefix)
+getEntityType("20-12345678-6"); // "M"
+getEntityType("27-12345678-0"); // "F"
+getEntityType("23-10000005-9"); // "M"
+getEntityType("23-10000002-4"); // "F"
+getEntityType("30-12345678-1"); // "E"
+getEntityType("33-69345023-9"); // "E"
+getEntityType("99-12345678-0"); // null
 ```
 
 ## Types
@@ -146,15 +148,24 @@ type EntityType = "M" | "F" | "E";
 type CuitPrefix = "20" | "23" | "27" | "30" | "33";
 ```
 
-## Features
+`CuitPrefix` lists the prefixes `generate` can return.
 
-- Zero dependencies
-- Full TypeScript support
-- Works in Node.js, browsers, and edge runtimes
-- ESM and CommonJS support
-- Tree-shakeable
-- Tiny bundle size (under 600 bytes gzipped, checked in CI)
+## Development
+
+This project uses [Bun](https://bun.sh).
+
+```bash
+bun install
+bun test             # unit, property, packaging, docs and CI workflow tests
+bun run type-check
+bun run lint
+bun run format:check
+bun run mutation     # mutation testing with Stryker
+```
+
+`bun run build && node bench/bench.mjs` benchmarks the built package. See
+[CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE) © Gabriel Vaquer
