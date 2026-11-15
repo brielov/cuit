@@ -1,0 +1,33 @@
+name: Bug report
+description: A function returns a wrong result, throws, or the package fails to load
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `npm ls cuit`
+      placeholder: cuit@2.0.2
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: The smallest call that shows the problem, with its actual and expected result.
+      render: typescript
+      placeholder: |
+        import { isValid } from "cuit";
+        isValid("20-12345678-6"); // actual: false, expected: true
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why the expected result is right
+      description: For check digits or prefixes, a source (ARCA, a real CUIT) helps.
+  - type: input
+    id: runtime
+    attributes:
+      label: Runtime
+      placeholder: Node 22, Bun 1.3, Chrome 130, ...

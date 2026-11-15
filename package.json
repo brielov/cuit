@@ -1,7 +1,7 @@
 {
   "name": "cuit",
   "version": "2.0.0",
-  "description": "Lightweight utilities for validating, formatting, and generating Argentine CUIT/CUIL numbers",
+  "description": "Validate, format and generate Argentine CUIT and CUIL numbers. Zero dependencies, fully typed.",
   "license": "MIT",
   "author": "brielov",
   "repository": {
@@ -17,10 +17,12 @@
     "cuil",
     "argentina",
     "afip",
+    "arca",
     "tax",
     "dni",
     "validation",
-    "validator"
+    "validator",
+    "typescript"
   ],
   "type": "module",
   "sideEffects": false,
