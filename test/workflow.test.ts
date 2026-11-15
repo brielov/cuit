@@ -68,6 +68,13 @@ describe("CI publish step", () => {
     expect(runPublish(conflict, 1)).toBe(0);
   });
 
+  test("skips on the conflict message as npm 11 words it", () => {
+    // Verbatim from the publish job of run 43639079240 (npm 11.19.1)
+    const conflict =
+      "npm notice version: 2.0.0\nnpm error You cannot publish over the previously published versions: 2.0.0.\nnpm error A complete log of this run can be found in: /home/runner/.npm/_logs/x-debug-0.log";
+    expect(runPublish(conflict, 1)).toBe(0);
+  });
+
   test("fails when prepublishOnly fails, even if its output quotes the conflict message", () => {
     // A failing test prints its source, which can contain the conflict phrase
     const failingTests =
