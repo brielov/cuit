@@ -41,7 +41,7 @@ function pad(input: string): string {
 function computeSum(digits: string): number {
   let sum = 0;
   for (let i = 0; i < WEIGHTS.length; i++) {
-    sum += parseInt(digits[i]!, 10) * WEIGHTS[i]!;
+    sum += (digits.charCodeAt(i) - 48) * WEIGHTS[i]!;
   }
   return sum;
 }
@@ -74,7 +74,7 @@ export function isValid(input: string): boolean {
   if (cuit.length !== 11 || cuit === "00000000000") return false;
 
   const expected = computeCheckDigit(computeSum(cuit) % 11);
-  const actual = parseInt(cuit[10]!, 10);
+  const actual = cuit.charCodeAt(10) - 48;
 
   return actual === expected;
 }
